@@ -1,0 +1,79 @@
+---
+title: "Insolation Extraction"
+author: "Laura Boyall"
+output: html_document
+date: "26-10-2022"
+---
+
+# Introduction 
+
+This script is used to extract the Laskar et al. (2004) insolation data using the palinsol package (<https://rdrr.io/cran/palinsol/>). 
+
+The first step here is activating all of the packages required to rud the different sections of this code. 
+```{r message=FALSE}
+library(gsl)
+library(palinsol)
+library(ggplot2)
+library(factoextra)
+library(devtools)
+library(tidyverse)
+library(devtools)
+library(ggpubr)
+library(Hmisc)
+```
+
+The palinsol packages allows you to use both the Berker 78 data, and the Laskar et al (2004) data, however for this analysis we will be using the Laksar data. 
+In this section of code, we are telling R that we will be using the LA04 data using the data() function. We are then going to be extracting only the Holocene samples using the la04past[,]. This is telling R that we are using past insolation, and not future. 
+We are using 1:10 for the past 11,000 years. 
+```{r}
+data(LA04)
+Holocene <- la04past[1:11,]
+```
+
+Now what we are going to do is find the seasonal averages for the insolation at different latitudes and assign them to a variable name. We are then using these to make the annual mean. You can see here that all we are changing is the longitude, this is what can define the seasons in the equation. See code for details. 
+```{r}
+Spring90 <- Insol (Holocene,long=0, lat=90*pi/180,S0=1365)
+Summer90 <-Insol (Holocene,long=pi/2, lat=90*pi/180,S0=1365)
+Autumn90 <- Insol (Holocene,long=pi, lat=90*pi/180,S0=1365)
+Winter90 <- Insol (Holocene,long=3*pi/2, lat=90*pi/180,S0=1365)
+Mean90 <- (Spring90 + Summer90 + Autumn90 + Winter90)/4
+```
+We are now going to be doing the same for 0 degrees lat. Notice that it is only the lat here that we are changing. 
+
+```{r}
+Spring0 <- Insol (Holocene,long=0, lat=0*pi/180,S0=1365)
+Summer0 <-Insol (Holocene,long=pi/2, lat=0*pi/180,S0=1365)
+Autumn0 <- Insol (Holocene,long=pi, lat=0*pi/180,S0=1365)
+Winter0 <- Insol (Holocene,long=3*pi/2, lat=0*pi/180,S0=1365)
+Mean0 <- (Spring0 + Summer0 + Autumn0 + Winter0)/4
+```
+Now lets plot both of these timeseries using base R functions
+```{r}
+plot(Holocene$time, Mean90, type = 'l', main = "Holocene Insolation at 90 degress", ylab = "Insolation", xlab = "time")
+plot(Holocene$time, Mean0, type = 'l', main = "Holocene Insolation at 0 degress", ylab = "Insolation", xlab = "time")
+```
+Now we are going to be working out the difference between the two latitudes to calculate the latitudinal insolation gradient (LIS) and also then working out the angle. 
+```{r}
+#Difference 
+Difference <- Mean0 - Mean90
+
+# Latitudinal insolation gradient
+LIG <- Difference / 90
+plot(Holocene$time, LIG, type = 'l', main = "Holocene LIG", ylab = "Insolation Angle", xlab = "time" )
+```
+Now we want to extract all of the data as a csv file so we can play around with it more outside of R etc. We are first going to bind together time, mean insolationa and the LIG, we will then be extracting it as a .csv
+```{r}
+# binding together the data
+Insolation_data <- cbind("time"= Holocene$time, "Mean insolation 0"= Mean0, "Mean insolation 90"=Mean90, "LIG"=LIG)
+
+# writing the .csv file, remove the hashtag when doing this step
+#write.csv(Insolation_data, file = "Insolation.csv")
+```
+
+
+
+
+
+
+
+
